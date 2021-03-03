@@ -1,18 +1,83 @@
-import React from 'react';
-import './App.css';
-import SearchField from "./components/search_field"
-import ItemComponent from "./components/item_component"
+import React, { useState } from "react";
+import "./App.css";
+import ItemComponent from "./components/item_component";
+import ItemNoResult from "./components/item_no_result";
+import SearchField from "./components/search_field";
 
+function RenderItem({ values }) {
+  if (values.length > 0) {
+    //loop through each item and add to render list
+    const renderList = values.map((item) => {
+      return (
+        <ItemComponent
+          title={item.title}
+          state={item.state}
+          location={item.location}
+          population={item.population}
+          total_wages={item.total_wages}
+        />
+      );
+    });
 
-function App(){
+    return renderList;
+  } else {
+    return <ItemNoResult title="No results!" />;
+  }
+}
+
+const App = () => {
+  //used hooks to manage state
+  const [items, setItems] = useState([]);
+  // useEffect(() => {}, [items]);
+
+  function onValueChange(e) {
+    console.log(`value changed ${e.target.value}`);
+    if (e.target.value.length > 0) {
+      fetch(`http://ctp-zip-api.herokuapp.com/zip/${e.target.value}`).then(
+        function (response) {
+          if (response.status === 200) {
+            response.json().then(function (data) {
+              console.log(data);
+
+              //custom object to compose content
+              const itemObject = {
+                title: "",
+                state: "",
+                location: "",
+                population: "",
+                total_wages: "",
+              };
+              var content = [];
+
+              data.forEach((ele, _) => {
+                itemObject.title = ele["LocationText"];
+                itemObject.state = ele["State"];
+                itemObject.location = `(${ele["Lat"]}, ${ele["Long"]})`;
+                itemObject.population = ele["EstimatedPopulation"];
+                itemObject.total_wages = ele["TotalWages"];
+
+                content.push(itemObject);
+              });
+
+              //update state using hooks
+              setItems(content);
+            });
+          } else {
+            setItems([]); //clear array if there is no results
+          }
+        }
+      );
+    }
+  }
+
   return (
     <div class="container top-margin">
       <div class="col-md-5 mx-auto">
-        <SearchField />
-        <ItemComponent />
+        <SearchField onValueChange={(e) => onValueChange(e)} />
+        <RenderItem values={items} />
       </div>
     </div>
   );
-}
+};
 
-export default App
+export default App;
