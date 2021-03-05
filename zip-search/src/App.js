@@ -25,14 +25,25 @@ function RenderItem({ values }) {
   }
 }
 
+function isValid(str) {
+  return !/[~`!#$%\^&*+=\-\[\]\\';,/{}|\\":<>\?A-za-z]/g.test(str);
+}
+
 const App = () => {
   //used hooks to manage state
   const [items, setItems] = useState([]);
   // useEffect(() => {}, [items]);
 
   function onValueChange(e) {
-    console.log(`value changed ${e.target.value}`);
-    if (e.target.value.length > 0) {
+    //error handle invalid format
+    const validFormat = isValid(e.target.value);
+    if (!validFormat) {
+      console.log("input is invalid!");
+      setItems([]);
+      return;
+    }
+
+    if (e.target.value.length === 5) {
       fetch(`http://ctp-zip-api.herokuapp.com/zip/${e.target.value}`).then(
         function (response) {
           if (response.status === 200) {
@@ -67,6 +78,8 @@ const App = () => {
           }
         }
       );
+    } else {
+      setItems([]); //clear array if input length != 5
     }
   }
 
